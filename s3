@@ -145,19 +145,23 @@ class AWSCredentials(object):
                              timeval or time.gmtime())
         request.add_header('Date', date)
         host = request.get_host()
+        resource = ""
 
         # TODO: bucket name finding is ugly, I should find a way to support
         # both naming conventions: http://bucket.s3.amazonaws.com/ and
-        # http://s3.amazonaws.com/bucket/
+        # http://s3.amazonaws.com/bucket/ and
+        # http://s3-us-east-1.amazonaws.com/bucket/
         try:
             pos = host.find(".s3")
-            assert pos != -1
-            bucket = host[:pos]
+            if pos == -1 and (host.find("s3.") == 0 or host.find("s3-") == 0):
+                resource = "%s" % request.get_selector()
+            else:
+                assert pos != -1
+                resource = "/%s%s" % (host[:pos], request.get_selector())
         except:
             raise Exception("Can't establish bucket name based on the hostname:\
               %s" % host)
 
-        resource = "/%s%s" % (bucket, request.get_selector(), )
         amz_headers = 'x-amz-security-token:%s\n' % self.token
         sigstring = ("%(method)s\n\n\n%(date)s\n"
                      "%(canon_amzn_headers)s%(canon_amzn_resource)s") % ({
