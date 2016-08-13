@@ -55,6 +55,31 @@ class AWSCredentials(object):
             if response:
                 response.close()
 
+    def __load_from_environment(self):
+        """
+        Reads from the environment
+        """
+
+        value = {
+            'Token': '',
+            'AccessKeyId': os.environ.get('AWS_ACCESS_KEY'),
+            'SecretAccessKey': os.environ.get('AWS_SECRET_KEY')
+        }
+
+        if value['AccessKeyId'] == "" or value['AccessKeyId'] == None: 
+            value['AccessKeyId'] = os.environ.get("AWS_ACCESS_KEY_ID")
+
+        if value['SecretAccessKey'] == "" or value['SecretAccessKey'] == None:
+            value['SecretAccessKey'] = os.environ.get("AWS_SECRET_ACCESS_KEY")
+
+        if value['AccessKeyId'] == "" or value['SecretAccessKey'] == "":
+            return None
+
+        if value['AccessKeyId'] == None or value['SecretAccessKey'] == None:
+            return None
+
+        return value
+
     def __load_config(self):
         """
         Loading config file from predefined location.
@@ -79,10 +104,11 @@ class AWSCredentials(object):
         Note: This method should be explicitly called after constructing new
             object, as in 'explicit is better than implicit'.
         """
-        data = None
+        data = self.__load_from_environment()
 
         try:
-            data = self.__load_config()
+            if data is None:
+                data = self.__load_config()
         except:
             pass
 
